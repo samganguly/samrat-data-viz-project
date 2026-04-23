@@ -1,0 +1,469 @@
+% Global Wealth and Education report
+% Intended for the official VGTC conference template on Overleaf:
+% https://www.overleaf.com/latex/templates/ieee-tvcg-conference-style-template/htqfqtgkvcqf
+
+\PassOptionsToPackage{hyphens}{url}
+\documentclass{vgtc}
+
+\ifpdf
+  \pdfoutput=1\relax
+  \pdfcompresslevel=9
+  \pdfoptionpdfminorversion=7
+  \usepackage{graphicx}
+  \DeclareGraphicsExtensions{.pdf,.png,.jpg,.jpeg}
+\else
+  \usepackage{graphicx}
+  \DeclareGraphicsExtensions{.eps}
+\fi
+
+\graphicspath{{appendix-figures/}{figures/}{images/}{./}}
+\usepackage[T1]{fontenc}
+\PassOptionsToPackage{warn}{textcomp}
+\usepackage{textcomp}
+\usepackage{mathptmx}
+\usepackage{times}
+\renewcommand*\ttdefault{txtt}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{url}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{placeins}
+\emergencystretch=2em
+\Urlmuskip=0mu plus 1mu\relax
+\urlstyle{same}
+\raggedbottom
+\setlength{\textfloatsep}{6pt plus 1pt minus 1pt}
+\setlength{\floatsep}{6pt plus 1pt minus 1pt}
+\setlength{\intextsep}{6pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{1pt}
+
+\onlineid{0}
+\vgtccategory{Research}
+
+
+\title{Wealth Structures, Inequality, and Educational Development:\\
+An Interactive D3 Analysis of Cross-National Patterns}
+
+\author{Samrat Kumar Gangopadhyay\\
+\scriptsize K25131454\\
+\scriptsize King's College London}
+
+\abstract{
+Education is both a development outcome and a socio-political commitment: the United Nations' 2030 Agenda frames equitable education as a global priority, while UNESCO's \emph{Education Finance Watch 2024} shows how inequality and constrained public finance continue to pressure progress~\cite{sdg2030,efw2024}. This report combines World Bank wealth accounts and World Development Indicators in a D3 webapp. The pipeline moves from \emph{The Changing Wealth of Nations} and WDI extracts~\cite{cwon2021,wdi}, through Power BI merging into \texttt{q\_analysis\_ready}, to a Python notebook that produces the analysis tables. Across the full panel, log wealth per capita strongly correlates with school life expectancy ($r=+0.83$, $n=1{,}945$) and tertiary enrolment ($r=+0.73$, $n=2{,}327$). How a country’s wealth is structured makes a big difference. Countries that depend more on natural resources usually have shorter school life expectancy ($r = -0.71$), while those with more human and produced capital tend to see better educational outcomes. On average, wealth is important but does not explain everything. Among countries with similar wealth, inequality matters more than education spending. The dashboard shows clear trends over time, wealth breakdowns, and country comparisons, but its findings for the policy group are less clear. Comparing wealth more directly would help make these results clearer.
+}
+
+
+\newcommand{\figinterpretation}[1]{%
+  \vspace{0.1em}
+  \begin{minipage}{0.98\columnwidth}
+  \footnotesize
+  \textbf{Interpretation.} #1
+  \end{minipage}
+}
+\begin{document}
+\firstsection{Introduction}
+\maketitle
+
+The analysis uses a D3 webapp with scatterplots, line charts, filters, and summaries to explore wealth and educational development.
+
+\textbf{The main argument is that wealth level is important, wealth composition helps explain differences, and inequality still matters for policy beyond just comparing wealth.} Scatterplots are used to show relationships, while line charts show changes over time, as these visual tools fit the types of comparisons and trends being analyzed~\cite{munzner,bostock}.
+
+\subsection{Research Questions}
+\begin{itemize}[leftmargin=*, itemsep=0.25em, topsep=0.35em]
+  \item \textbf{Q1.} How has the relationship between national wealth per capita and educational development changed over time?
+  \item \textbf{Q2.} Does wealth composition matter as much as wealth level? Do countries with higher human and produced capital shares achieve stronger educational outcomes than countries with greater dependence on natural capital?
+  \item \textbf{Q3.} Which countries overperform or underperform educationally relative to their wealth level, and are those patterns regionally clustered?
+  \item \textbf{Q4.} Among countries with similar wealth levels, do higher education expenditure and lower inequality correspond to stronger educational outcomes?
+\end{itemize}
+
+\subsection{Analytical Rationale}
+The report starts with the overall relationship between wealth and education, then looks at wealth \emph{composition}, examines how countries perform compared to the trend, and finally considers the roles of spending and inequality for policy. This order moves from patterns to causes, differences, and policy meaning.
+
+\section{Data and Workflow}
+\subsection{World Bank Data Sources}
+\textbf{\emph{The Changing Wealth of Nations} (CWON) measures wealth as a stock of productive assets rather than a short-term income flow}~\cite{cwon2021}, while \emph{World Development Indicators} (WDI) contributes the education, population, GDP, spending, inequality, and metadata used in interpretation~\cite{wdi}.
+
+\textbf{CWON provides the wealth structure.} It contributes total wealth per capita with human, produced, natural, and net foreign asset components.
+
+\textbf{WDI provides the education and policy context.} It contributes school life expectancy, tertiary enrolment, lower secondary completion, education expenditure, inequality, population, and income-group metadata.
+
+\subsection{Question-to-Data Mapping}
+\begin{table*}[t]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.21\textwidth} >{\raggedright\arraybackslash}p{0.22\textwidth} >{\raggedright\arraybackslash}p{0.16\textwidth} X}
+    \toprule
+    Question focus & Tables used & Unit of analysis & Why appropriate \\
+    \midrule
+    Wealth and educational change over time & \texttt{q\_analysis\_core}, \texttt{q\_year\_summary}, \texttt{q\_year\_region\_summary} & Country-year, yearly median, region-year median & Combines year-specific views with long-run summaries, allowing both cross-sectional and temporal comparison. \\
+    Wealth composition and educational outcomes & \texttt{q\_analysis\_core} & Country-year & Keeps wealth shares and education outcomes at the same grain so composition effects can be compared directly. \\
+    Relative performance around the wealth trend & \texttt{q\_country\_summary} & Country average & Reduces year-to-year noise and supports fitted-line comparison at a long-run country level. \\
+    Spending, inequality, and comparable wealth contexts & \texttt{q\_q4\_spend}, \texttt{q\_q4\_gini} & Matched country-year subsets & This approach selects policy variables that have coverage and keeps the structure needed for further comparisons and wealth-adjusted checks. \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Mapping between the analytical questions, derived tables, and units of analysis.}
+\end{table*}
+
+\subsection{Relationships Between Sources and Derived Tables}
+All analytical tables use a country-year format. CWON provides the development measures based on assets, while WDI adds outcome, demographic, and policy data. This setup lets us study wealth, composition, education, spending, inequality, and population together. The main panel is kept in \texttt{q\_analysis\_core}. \texttt{q\_year\_summary} and \texttt{q\_year\_region\_summary} show changes over time. \texttt{q\_country\_summary} helps compare country performance, and the policy subsets focus on spending and inequality, which have less data. Because these subsets are smaller, the last question is handled with extra care.
+
+\subsection{Processing Pipeline}
+The cleaning and integration process uses both Power BI and Python. In Power BI, the CWON and WDI tables are combined into a country-year dataset and exported as \texttt{q\_analysis\_ready}.
+
+The \texttt{wealth\_education\_preprocessing.ipynb} notebook then continues the preparation. It fixes a missing income-group label, removes the year 2003 because of a gap in education data, and creates the final tables.
+
+\textbf{Main preprocessing outputs:}
+\begin{itemize}[leftmargin=*, itemsep=0.2em, topsep=0.3em]
+  \item \texttt{q\_analysis\_core}: 2{,}407 country-year rows.
+  \item \texttt{q\_q4\_spend}: 1{,}780 policy-subset rows.
+  \item \texttt{q\_q4\_gini}: 969 inequality-subset rows.
+  \item \texttt{q\_country\_summary}: 147 country summaries.
+  \item \texttt{q\_year\_summary}: global yearly medians.
+  \item \texttt{q\_year\_region\_summary}: region-year medians.
+\end{itemize}
+Supplementary links, data-source details, and visualisation outputs are provided in the appendix.
+\section{Correlation Analysis}
+Pearson's correlation coefficient is used to check if the broad patterns seen in the visuals also hold up in the numbers across the dataset. For the policy subset, a wealth-adjusted partial correlation is also included, since comparing countries with similar wealth levels needs more than just a simple bivariate analysis.
+
+Across the full panel, log wealth per capita is strongly correlated with school life expectancy ($r=+0.83$, $n=1{,}945$) and tertiary enrolment ($r=+0.73$, $n=2{,}327$). Yearly correlations remain positive throughout, with school-life values between about $+0.76$ and $+0.86$, and tertiary values between about $+0.69$ and $+0.76$. Wealth composition also shows a clear structure: human-capital share is moderately positively related to school life expectancy ($r=+0.43$), natural-capital share is strongly negatively related to school life expectancy ($r=-0.71$), and produced-capital share is moderately positively related to tertiary enrolment ($r=+0.52$). Within the policy subset, higher spending is linked to better outcomes at first, but this connection becomes weaker when wealth is taken into account. However, inequality is still noticeable, especially in tertiary participation ($r=-0.29$ in the wealth-adjusted check).
+
+\textbf{The correlation results confirm that the visual patterns are not incidental: wealth level is strongly related to education, composition adds explanation, and inequality remains salient even after headline wealth is partly accounted for.}
+
+\section{Results}
+\subsection{Wealth and Educational Change Over Time}
+\textbf{How has the relationship between national wealth per capita and educational development changed over time?}
+
+\textbf{Visual rationale:} Year-by-year scatterplots are shown alongside global and regional line charts to highlight both relationships and changes over time. The appendix figures provide the supporting visual material: the country-year scatterplots are shown in Figure~\ref{fig:q1-scatter}, the global trend views in Figure~\ref{fig:q1-global}, and the regional trend views in Figure~\ref{fig:q1-regional}. Using the same wealth axes, regional colors, and population-scaled points helps compare the two education outcomes. Line charts make long-term changes clearer than showing all years as points, which helps separate patterns at one point in time from trends over time.
+
+The trend charts back up this view. Median school life expectancy rose from 11.40 years in 1995 to 15.44 years in 2018. During the same time, median tertiary enrolment went up from 18.60 to 54.77. While every region made progress, the rates of improvement differ. Most recently, Sub-Saharan Africa still has the lowest median school life and tertiary enrolment, while North America, Europe, Central Asia, East Asia and the Pacific have the highest levels.
+
+\textbf{Across the observed period, wealth and education rise together strongly, but global improvement has not eliminated persistent regional inequality.}
+
+\subsection{Why Wealth Composition Matters}
+\textbf{Does wealth composition matter as much as wealth level? Do countries with higher human and produced capital shares achieve stronger educational outcomes than countries with greater dependence on natural capital?}
+
+\textbf{Visual rationale:} Three scatterplots are used to answer this relational question. The supporting appendix figures are shown in Figures~\ref{fig:q2-pair1} and~\ref{fig:q2-pair2}. Each plot shows one aspect of the wealth structure alongside an education outcome, separating overall wealth from its composition. Using the same layout, colour scheme, and share-based x-axes makes the charts easy to compare. The patterns are different. Human-capital share is positively linked to school life expectancy. Natural-capital share shows a strong negative association, while produced-capital share is positively associated with tertiary enrolment.
+
+This takes the discussion of wealth further than just looking at its total amount. If total wealth was all that mattered, the composition plots would not reveal much. However, the patterns show that the types of assets a country has affect how well it can turn development capacity into education. Countries with more human and produced assets usually have stronger educational outcomes than those that rely mainly on natural resources.
+
+\textbf{The structure of wealth matters, not only its level: human and produced assets align with stronger educational outcomes, while natural-capital dependence aligns with weaker ones.}
+
+\subsection{Relative Performance Around the Wealth Trend}
+\textbf{Which countries overperform or underperform educationally relative to their wealth level, and are those patterns regionally clustered?}
+
+\textbf{Visual rationale:} In this section, we shift from looking at data for each country and year to focusing on average values for each country. The supporting appendix figures are shown in Figures~\ref{fig:q3-scatter} and~\ref{fig:q3-table}. We then compare these averages to the expected trend in wealth. Scatterplots of country averages show the main pattern, while a table of residuals highlights which countries differ most from the trend. The fitted line serves as a reference point. Labels make it easy to spot outliers without making the chart too busy, and the table lists these differences in order.
+
+Average wealth is strongly connected to school life expectancy ($r=+0.84$, $n=145$) and tertiary enrolment ($r=+0.77$, $n=146$), but wealth is not the only factor that matters. Countries with similar wealth levels can still have very different educational results. These differences are not by chance. Over- and under-performance in tertiary education is mainly observed in Europe and Central Asia, while differences in school life expectancy are found across many regions.
+
+\textbf{Wealth sets a strong baseline, but countries with similar average wealth still separate meaningfully once educational performance is viewed around the fitted trend.}
+
+\subsection{Spending, Inequality, and Comparable Wealth Contexts}
+\textbf{Among countries with similar wealth levels, do higher education expenditure and lower inequality correspond to stronger educational outcomes?}
+
+\textbf{Visual rationale:} This part of the analysis is more cautious because it uses smaller, matched groups and compares countries with similar wealth. The appendix presents two combined dashboard screenshots in Figures~\ref{fig:q4-school} and~\ref{fig:q4-tertiary}, each pairing education spending and inequality for a single outcome under common filter settings. This layout makes direct comparison between the two policy variables easier for school life expectancy and tertiary enrolment. The displayed dashboard views are filtered 2018 matched-country-year snapshots, so the figure-level $n$ and $r$ values differ from the broader policy-subset correlations reported in the main text. In the broader policy subset, education spending is positively associated with school life expectancy ($r=+0.41$, $n=1{,}497$) and tertiary enrolment ($r=+0.38$, $n=1{,}759$), while inequality is negatively associated with school life expectancy ($r=-0.38$, $n=888$) and tertiary enrolment ($r=-0.44$, $n=962$).
+
+Next, the patterns were compared using a wealth-adjusted partial-correlation approach. This step changes how we interpret the results. When wealth is held roughly constant, the links between spending and other factors become much weaker. However, inequality is still clear, especially in tertiary participation. The plots still provide useful information, but the finding about inequality is stronger.
+
+\textbf{In the policy group, inequality stands out more once we adjust for wealth. On the other hand, spending seems less connected when headline wealth is removed.}
+
+\section{Design and Discussion}
+\textbf{The design uses important visualization principles. It matches visuals to the analysis, makes it easy to compare views, keeps things clear, and uses interaction to help with reasoning instead of causing distractions.}~\cite{munzner,bostock}.
+
+\subsection{Task--Encoding Fit}
+The selected chart types fit the needs of this analysis. Scatterplots show relationships, spread, outliers, and clusters in the data. Line charts make it easy to spot changes and differences over time. The residual table helps the country-average scatterplots by turning differences into a clear ranking.
+
+\subsection{Colour}
+Colors are used to show different regions, and this mapping stays the same in every chart so each region is always easy to recognize. Keeping colors consistent makes it easier to compare charts. A simple, high-contrast palette helps group data clearly and keeps the charts readable in both light and dark modes.
+
+\subsection{Size}
+Bubble size in the scatterplots represents population, adding context without taking away from the main variables on the axes. This helps show if a pattern is driven by countries with very small or very large populations. In other charts, mark size and line thickness are kept simple so that the focus stays on the data, not on flashy design.
+
+\subsection{Aesthetics and Interaction}
+The D3 charts have a clean, analytical look. Thin borders, clear spacing, and simple fonts make the charts easy to read. As you scroll, each chart animates and builds up. Tooltips display detailed values, while animated lines and regressions highlight trends as they show up. The charts reveal information gradually, and you can view more detail when needed.
+
+\subsection{Implementation Summary}
+This project is a D3 web app designed as a coordinated dashboard, rather than a set of static images. It creates scatterplots, line charts, legends, tooltips, fitted lines, and annotations directly in D3, using analysis tables from the CWON and WDI workflow. This method keeps the visuals in line with the report’s analysis.
+
+This design makes it easy to explore data by keeping things simple and user-friendly. You can filter results by year, region, or income group to find patterns in different groups. When you move your mouse over the charts, you see exact country values without any distractions. Regression lines and paths appear one at a time to make trends easier to see. If you want to compare performance, standout countries are highlighted near the benchmark. The charts also offer dark and light modes, along with accessibility options, so they are easier to read.
+
+\subsection{Interpretation and Implications}
+The visual analysis makes things clear. Time, composition, and residual data fit well with scatterplots and line charts since these types of questions focus on relationships, changes, and trends. Spending and inequality data are still useful, but they are better used as supporting evidence rather than as the primary means of comparing countries with similar wealth.
+
+\textbf{The broader implication is that education should be treated as part of national asset formation, not only as a recurrent social expenditure.} If wealth level is strongly and persistently associated with education, ministries of finance, ministries of education, and development banks should treat education as a long-horizon asset-building strategy~\cite{cwon2021, hcp}. If wealth composition matters, economies that are structurally dependent on natural capital should consider channelling rents into human capital formation, educational institutions, and complementary infrastructure. If wealth-adjusted inequality remains visible even where spending effects weaken, policy should focus not only on expenditure volume but also on the social and political conditions that shape opportunity, access, and educational continuity.
+
+This interpretation aligns with SDG 4's emphasis on inclusive and equitable quality education, the 2030 Agenda's broader concern with inequality, and UNESCO's repeated call to protect public financing for education~\cite{sdg2030,unesco2030,paris2022,efw2024}. In suggestive terms, the report points toward three priorities: \textbf{sustained human-capital investment}, \textbf{deliberate conversion of wealth into educational capacity}, and \textbf{stronger attention to inequality reduction}.
+
+\section{Limitations and Conclusion}
+This analysis is observational. Correlation and residual analysis cannot prove cause and effect. The spending and inequality subsets are much smaller than the main dataset, and using country averages hides changes within countries over time. Also, the strict comparison of countries with similar wealth in the policy subset relies partly on wealth-adjusted calculations, not just the charts.
+
+\textbf{While there are some limitations, the data reveals a clear trend.} Wealth per person is strongly connected to educational development, and this link remains steady over time. The way wealth is distributed matters in different ways than just the total amount, and inequality is especially important when considering certain policy areas. The D3 webapp is most useful for exploring questions about time, wealth composition, and performance, but it is less effective for analyzing spending and inequality. The next version should add features that show how wealth influences these areas, although this study already provides a strong starting point for understanding the results. 
+
+
+\begingroup
+\sloppy
+\begin{thebibliography}{99}\small
+
+\bibitem{bostock}
+M. Bostock, V. Ogievetsky, and J. Heer.
+\newblock D$^3$: Data-driven documents.
+\newblock \emph{IEEE Transactions on Visualization and Computer Graphics}, 17(12):2301--2309, 2011.
+
+\bibitem{cwon2021}
+World Bank.
+\newblock \emph{The Changing Wealth of Nations 2021: Managing Assets for the Future}.
+\newblock World Bank, Washington, DC, 2021.
+\newblock URL: \url{https://www.worldbank.org/en/publication/changing-wealth-of-nations}.
+
+\bibitem{efw2024}
+Global Education Monitoring Report Team, UNESCO Institute for Statistics, and World Bank.
+\newblock \emph{Education Finance Watch 2024}.
+\newblock UNESCO, Paris, 2024.
+\newblock URL: \url{https://www.unesco.org/gem-report/en/2024efw}.
+
+\bibitem{hcp}
+World Bank.
+\newblock About the Human Capital Project.
+\newblock World Bank briefing page, accessed April 2026.
+\newblock URL: \url{https://www.worldbank.org/en/publication/human-capital/brief/about-hcp}.
+
+\bibitem{munzner}
+T. Munzner.
+\newblock \emph{Visualization Analysis and Design}.
+\newblock CRC Press, Boca Raton, FL, 2014.
+
+\bibitem{paris2022}
+UNESCO.
+\newblock UNESCO-led multi-partner monitoring of the Paris Declaration for education under the SDG4-Education 2030 framework.
+\newblock UNESCO news article, 2022.
+\newblock URL: \url{https://www.unesco.org/en/articles/unesco-led-multi-partner-sdg4-education-2030-high-level-steering-committee-monitor-progress-paris}.
+
+\bibitem{sdg2030}
+United Nations.
+\newblock \emph{Transforming our World: The 2030 Agenda for Sustainable Development}.
+\newblock United Nations Department of Economic and Social Affairs, 2015.
+\newblock URL: \url{https://sdgs.un.org/2030agenda}.
+
+\bibitem{unesco2030}
+UNESCO.
+\newblock UNESCO member states unite to increase investment in education.
+\newblock UNESCO article, 2021.
+\newblock URL: \url{https://www.unesco.org/en/articles/unesco-member-states-unite-increase-investment-education}.
+
+\bibitem{wdi}
+World Bank.
+\newblock World Development Indicators.
+\newblock World Bank DataBank, accessed April 2026.
+\newblock URL: \url{https://databank.worldbank.org/databases/source/world-development-indicators}.
+
+\end{thebibliography}
+\endgroup
+\appendix
+\renewcommand{\thesection}{Appendix \Alph{section}:}
+\section{WebApp Live Link}
+\small
+The implemented D3.js web application can be accessed at:
+
+\url{https://your-live-webapp-url-here}
+
+This live version reproduces the coordinated views used in the report, including the wealth--education scatterplots, temporal summaries, and policy-subset comparisons. It is provided as a supplementary artefact so that readers can inspect the interaction design, filtering controls, and hover-based detail beyond what is possible in the static PDF.
+
+\section{Data Sources}
+\small
+\begingroup
+\sloppy
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Changing Wealth of Nations (CWON) overview}\\
+  \url{https://www.worldbank.org/en/publication/changing-wealth-of-nations}
+  \item \textbf{World Development Indicators (WDI) DataBank}\\
+  \url{https://databank.worldbank.org/databases/source/world-development-indicators}
+  \item \textbf{GDP per capita (current US\$), NY.GDP.PCAP.CD}\\
+  \url{https://data.worldbank.org/indicator/NY.GDP.PCAP.CD}
+  \item \textbf{Population, total, SP.POP.TOTL}\\
+  \url{https://data.worldbank.org/indicator/SP.POP.TOTL}
+  \item \textbf{School life expectancy, primary to tertiary (years), SE.SCH.LIFE}\\
+  \url{https://data.worldbank.org/indicator/SE.SCH.LIFE}
+  \item \textbf{Tertiary enrolment rate, SE.TER.ENRR}\\
+  \url{https://data.worldbank.org/indicator/SE.TER.ENRR}
+  \item \textbf{Lower secondary completion rate, SE.SEC.CMPT.LO.ZS}\\
+  \url{https://data.worldbank.org/indicator/SE.SEC.CMPT.LO.ZS}
+  \item \textbf{Education expenditure as \% of GDP, SE.XPD.TOTL.GD.ZS}\\
+  \url{https://data.worldbank.org/indicator/SE.XPD.TOTL.GD.ZS}
+  \item \textbf{Gini index, SI.POV.GINI}\\
+  \url{https://data.worldbank.org/indicator/SI.POV.GINI}
+\end{itemize}
+\endgroup
+
+\section{Data Cleaning and Processing}
+\small
+The analytical dataset was prepared in two stages to keep the workflow both reproducible and easy to audit across software environments.
+
+\subsection*{Power BI cleaning and integration}
+\begin{enumerate}[leftmargin=*]
+  \item Import the CWON and WDI source extracts and harmonise country names, ISO3 keys, and year fields to a common country-year grain.
+  \item Assemble the master table \texttt{q\_analysis\_ready} by joining wealth, education, GDP, population, inequality, expenditure, region, and income-group information.
+  \item Retain the full master table as the source-of-truth export so that later transformations remain consistent across the report and web application.
+\end{enumerate}
+
+\subsection*{Python notebook preprocessing}
+The notebook \texttt{wealth\_education\_preprocessing.ipynb} then performs the analysis-stage transformations:
+\begin{enumerate}[leftmargin=*]
+  \item Patch the single missing income-group label for Ethiopia.
+  \item Validate that the merged panel remains one row per country-year.
+  \item Create \texttt{q\_analysis\_core} by removing 2003, which the notebook documents as a structural education-data gap, and retaining rows where at least one of the two strongest education variables is present.
+  \item Create \texttt{q\_q4\_spend} by filtering the core panel to non-null education expenditure.
+  \item Create \texttt{q\_q4\_gini} by further filtering the spending subset to non-null Gini values.
+  \item Create \texttt{q\_country\_summary} by averaging the core panel to country level and counting non-null years for each education and policy variable.
+  \item Create \texttt{q\_year\_summary} and \texttt{q\_year\_region\_summary} using medians rather than means for skewed variables, which is appropriate for wealth and participation distributions.
+  \item Export all analysis tables as CSV files to the \texttt{outputs} directory for use in the D3 application and accompanying analysis.
+\end{enumerate}
+\FloatBarrier
+\section{Colour Design and Accessibility}
+\small
+Colour in the web application is used in a deliberately structured way rather than as decoration. In the JavaScript layer, region categories are assigned fixed colours so that the same world region is recognised consistently across all coordinated views. The palette maps East Asia \& Pacific to \texttt{\#0072B2}, Europe \& Central Asia to \texttt{\#E69F00}, Latin America \& Caribbean to \texttt{\#009E73}, Middle East \& North Africa to \texttt{\#CC79A7}, North America to \texttt{\#56B4E9}, South Asia to \texttt{\#D55E00}, and Sub-Saharan Africa to \texttt{\#B79F00}. Semantic colours are also defined separately so that positive, negative, and neutral analytical signals remain visually distinct across charts and annotations.
+
+The interface includes an explicit accessibility and palette panel. In the submitted HTML, this panel states that the palette was designed with \textbf{protanopia} and \textbf{deuteranopia} in mind, and explains that region colours remain fixed for comparison across pages, while blue or teal indicate upward or positive patterns, vermillion indicates downward or negative patterns, and grey is reserved for weaker or neutral signals. This is consistent with the use of separate region and semantic colour mappings in the JavaScript source.
+
+Accessibility is supported beyond colour alone. The charts also use axis labels, legends, positional encoding, annotations, and hover tooltips so that interpretation does not depend entirely on hue. In the CSS, both light and dark themes are defined, and the design also includes a \texttt{prefers-reduced-motion} rule to disable animation for users who request reduced motion. Together, these choices improve readability, maintain visual consistency, and make the interface more robust for a wider range of viewers.
+\FloatBarrier
+\section{Visualisations}
+\small
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{prototype-layout.png}
+  \caption{Design-stage wireframes used to plan the coordinated multi-view D3 dashboard.}
+  \label{fig:prototype-layout}
+  \figinterpretation{These sketches show that the final interface was planned as a coordinated multi-view system rather than assembled ad hoc.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q1-scatter-school.png}
+
+  \vspace{0.05em}
+
+  \includegraphics[width=0.98\columnwidth]{q1-scatter-tertiary.png}
+  \caption{Country-year relationship between log wealth per capita and educational attainment, with strong positive associations for school life expectancy ($r=+0.83$) and tertiary enrolment ($r=+0.73$).}
+  \label{fig:q1-scatter}
+  \figinterpretation{Higher wealth per capita generally aligns with stronger educational outcomes, although the spread indicates that wealth alone does not fully explain variation.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q1-global-school.png}
+
+  \vspace{0.05em}
+
+  \includegraphics[width=0.98\columnwidth]{q1-global-tertiary.png}
+  \caption{Global median educational outcomes over time: school life expectancy rises from 11.40 years in 1995 to 15.44 years in 2018, while tertiary enrolment rises from 18.60 to 54.77.}
+  \label{fig:q1-global}
+  \figinterpretation{Educational attainment improves markedly over time at the global level.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q1-regional-school.png}
+
+  \vspace{0.05em}
+
+  \includegraphics[width=0.98\columnwidth]{q1-regional-tertiary.png}
+  \caption{Regional median educational outcomes over time, showing broad improvement but persistent gaps, with Sub-Saharan Africa remaining lowest in the latest year.}
+  \label{fig:q1-regional}
+  \figinterpretation{Regional progress did not eliminate inequality, and the lowest-performing region remains clearly separated from the highest-performing groups.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q2-human-school.png}
+
+  \vspace{0.05em}
+
+  \includegraphics[width=0.98\columnwidth]{q2-natural-school.png}
+  \caption{Wealth composition and school life expectancy, with human-capital share positively associated ($r=+0.43$) and natural-capital share strongly negatively associated ($r=-0.71$).}
+  \label{fig:q2-pair1}
+  \figinterpretation{Wealth composition adds explanatory power beyond total wealth level.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q2-produced-tertiary.png}
+  \caption{Produced-capital share and tertiary enrolment, showing a positive association ($r=+0.52$).}
+  \label{fig:q2-pair2}
+  \figinterpretation{Countries with stronger produced-capital bases tend to support stronger tertiary participation.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q3-scatter-school.png}
+
+  \vspace{0.05em}
+
+  \includegraphics[width=0.98\columnwidth]{q3-scatter-tertiary.png}
+  \caption{Country-average wealth and educational performance, with strong positive associations for school life expectancy ($r=+0.84$, $n=145$) and tertiary enrolment ($r=+0.77$, $n=146$).}
+  \label{fig:q3-scatter}
+  \figinterpretation{Average wealth sets a strong baseline, but residual variation shows that wealth is not destiny.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q3-residual-table.png}
+  \caption{Standout country residuals relative to the fitted wealth trend, identifying the strongest overperformers and underperformers in educational outcomes.}
+  \label{fig:q3-table}
+  \figinterpretation{Residuals are structured rather than random, especially for tertiary outcomes in Europe and Central Asia.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q4-school.png}
+  \caption{Filtered 2018 dashboard view for school life expectancy, combining education spending and inequality comparisons within the matched policy subset. In this view, education spending shows a weak positive association ($n=82$, $r=+0.16$), while inequality shows a stronger negative association ($n=58$, $r=-0.44$).}
+  \label{fig:q4-school}
+  \figinterpretation{Within the filtered 2018 matched subset, school life expectancy appears more strongly related to inequality than to spending.}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.98\columnwidth]{q4-tertiary.png}
+  \caption{Filtered 2018 dashboard view for tertiary enrolment, combining education spending and inequality comparisons within the matched policy subset. In this view, education spending shows a modest positive association ($n=82$, $r=+0.28$), while inequality shows a moderate negative association ($n=58$, $r=-0.32$).}
+  \label{fig:q4-tertiary}
+  \figinterpretation{Within the filtered 2018 matched subset, tertiary enrolment also appears more clearly related to inequality than to spending, although both views remain exploratory.}
+\end{figure}
+
+
+
+\FloatBarrier
+\section{Code Acknowledgement}
+\small
+The submitted web application was implemented in \textbf{D3.js}, with a lightweight \textbf{Flask} wrapper used to serve the HTML template and selected CSV outputs to the browser. The JavaScript application loads the processed analysis tables directly, applies interactive filters for year, region, and income group, and renders the coordinated views used throughout the project.
+
+The visual implementation is based primarily on \textbf{animated scatter plots} and \textbf{animated line charts}, rather than bar charts or lollipop charts. In the JavaScript source, scatter plots are rendered with population-scaled bubbles, regression lines, legends, annotations, and hover tooltips, while line charts are rendered as multi-series paths with point markers and staged reveal animations. The app also includes a residual ranking table, a palette widget, a dark/light theme toggle, and responsive layout behaviour for smaller screens.
+
+External resources used in implementation include the official D3 library loaded from a CDN, Google Fonts for typography, and standard HTML/CSS layout and accessibility patterns. The following links are the most relevant references for the submitted implementation:
+
+\begin{itemize}[leftmargin=*]
+  \item Official D3.js library and API reference:\\
+  \url{https://d3js.org/}\\
+  \url{https://d3js.org/api}
+  \item D3 getting started and transition/axis documentation relevant to the chart logic:\\
+  \url{https://d3js.org/getting-started}\\
+  \url{https://d3js.org/d3-transition}\\
+  \url{https://d3js.org/d3-axis}
+  \item D3 script included in the submitted HTML:\\
+  \url{https://cdn.jsdelivr.net/npm/d3@7}
+  \item Google Fonts resources used in the submitted HTML:\\
+  \url{https://fonts.googleapis.com}\\
+  \url{https://fonts.gstatic.com}
+  \item MDN references consulted for HTML and CSS structure:\\
+  \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Reference}\\
+  \url{https://developer.mozilla.org/en-US/docs/Web/CSS/Reference}
+\end{itemize}
+
+These resources informed the implementation approach, but the final submission adapts them to the submitted wealth--education dataset, the project-specific research questions, and the custom dashboard structure rather than reproducing an example template directly.
+
+\end{document}

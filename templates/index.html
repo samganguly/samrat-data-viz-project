@@ -1,0 +1,687 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Global Wealth and Education Across Countries</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Source+Serif+4:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-orb orb-c"></div>
+
+    <div class="page-shell">
+      <div class="topbar">
+        <div class="topbar-chip">Global wealth, education, and equity in motion</div>
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle light and dark mode">
+          <span class="theme-toggle-track">
+            <span class="theme-toggle-sunburst"></span>
+            <span class="theme-toggle-stars">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <span class="theme-toggle-thumb">
+              <span class="theme-toggle-core"></span>
+            </span>
+          </span>
+          <span class="theme-toggle-copy">
+            <span id="themeToggleLabel">Dark mode</span>
+          </span>
+        </button>
+      </div>
+
+      <header class="hero hero-immersive card">
+        <div class="hero-copy">
+          <p class="eyebrow">Global Wealth Track</p>
+          <h1>Wealth, Education, and Equity Across Countries</h1>
+          <p class="lede">
+            From 1995 to 2018, national wealth does not simply signal economic capacity, it also reveals how far that
+            capacity is converted into schooling, participation, and more equitable educational development.
+          </p>
+          <p class="lede lede-secondary">
+            I have built this interactive analysis to follow that relationship across countries and years, tracing where
+            wealth level matters most, where wealth structure changes the story, and where inequality weakens the link
+            between national resources and educational progress.
+          </p>
+          <div class="hero-meta">
+            <span class="hero-signature">Samrat Kumar Gangopadhyay</span>
+            <span class="hero-student-id">K25131454</span>
+            <button id="reportOpen" class="report-trigger" type="button" aria-haspopup="dialog" aria-controls="reportOverlay">
+              <span class="report-trigger-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M7 2.75h7.18L19.25 7.82V19A2.25 2.25 0 0 1 17 21.25H7A2.25 2.25 0 0 1 4.75 19V5A2.25 2.25 0 0 1 7 2.75Z"></path>
+                  <path d="M14 2.75V8h5.25"></path>
+                  <path d="M8.25 12.25h7.5"></path>
+                  <path d="M8.25 15.75h7.5"></path>
+                </svg>
+              </span>
+              <span>Final Report PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-visual-stage">
+            <div class="hero-orbit orbit-one"></div>
+            <div class="hero-orbit orbit-two"></div>
+            <div class="hero-orbit orbit-three"></div>
+            <div class="hero-core">
+              <span>1995-2018</span>
+              <span>147 countries</span>
+              <span>wealth x education</span>
+            </div>
+            <div class="hero-node node-a"></div>
+            <div class="hero-node node-b"></div>
+            <div class="hero-node node-c"></div>
+            <div class="hero-node node-d"></div>
+          </div>
+          <div class="hero-mini-grid">
+            <div class="hero-mini-card">
+              <strong>Level</strong>
+              <span>How far wealth per capita aligns with educational outcomes.</span>
+            </div>
+            <div class="hero-mini-card">
+              <strong>Composition</strong>
+              <span>How human, produced, and natural capital shape the pattern.</span>
+            </div>
+            <div class="hero-mini-card">
+              <strong>Performance</strong>
+              <span>Which countries sit above or below the fitted wealth trend.</span>
+            </div>
+            <div class="hero-mini-card">
+              <strong>Policy</strong>
+              <span>Whether spending and inequality still matter once wealth is considered.</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="source-brief card">
+        <div class="source-brief-head">
+          <div>
+            <p class="section-tag">Data Sources Used</p>
+            <h2>From World Bank source tables to analysis-ready views</h2>
+          </div>
+          <p class="source-brief-copy">
+            I built this web app from the coursework data pipeline. The source foundation is the
+            <strong>World Bank Changing Wealth of Nations (CWON)</strong> dataset plus selected
+            <strong>World Development Indicators (WDI)</strong>, cleaned and merged before the final Python notebook
+            produced the analysis tables used here.
+          </p>
+        </div>
+
+        <div class="source-grid">
+          <article class="source-card">
+            <h3>1. CWON</h3>
+            <p>
+              Source: <strong>World Bank Data360</strong>, Changing Wealth of Nations. This is the long-run wealth stock
+              dataset behind the project's core explanatory variables.
+            </p>
+            <p>
+              Key variables used: <code>wealth_pc</code>, <code>human_capital_pc</code>, <code>produced_capital_pc</code>,
+              <code>natural_capital_pc</code>, and <code>net_foreign_assets_pc</code>.
+            </p>
+          </article>
+
+          <article class="source-card">
+            <h3>2. WDI</h3>
+            <p>
+              Source: <strong>World Bank World Development Indicators</strong>. These files provide the education,
+              population, spending, inequality, and classification variables that let the wealth data be interpreted.
+            </p>
+            <p>
+              Indicators used here include education outcomes, population, GDP per capita, education spending, Gini,
+              region, and income-group classifications.
+            </p>
+          </article>
+
+          <article class="source-card">
+            <h3>3. Processing Flow</h3>
+            <p>
+              The source tables were cleaned in <strong>Power BI</strong>, merged into
+              <code>q_analysis_ready</code>, exported as CSV, processed in the
+              <strong>Python notebook</strong>, and then summarised into the final tables used by this app.
+            </p>
+            <p>
+              The final views used in the app are <code>q_analysis_core</code>, <code>q_year_summary</code>,
+              <code>q_year_region_summary</code>, <code>q_country_summary</code>, <code>q_q4_spend</code>, and
+              <code>q_q4_gini</code>.
+            </p>
+          </article>
+
+          <article class="source-card">
+            <h3>4. How To Read The App</h3>
+            <p>
+              Research questions 1 and 2 mainly use country-year observations, research question 3 uses country
+              averages, and the final question uses smaller matched subsets where spending or inequality data are
+              available.
+            </p>
+            <p>
+              The visual narrative is therefore organised around country-year relationships, country-average
+              performance, and smaller policy-focused subsets.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="topic-gallery">
+        <a class="topic-card card animate-on-scroll" href="#research-question-1">
+          <div class="topic-photo-pair">
+            <img
+              src="{{ url_for('static', filename='assets/photos/q1-classroom.jpg') }}"
+              alt="Teacher teaching students with a globe in a classroom"
+              class="topic-photo topic-photo-main"
+            />
+            <img
+              src="{{ url_for('static', filename='assets/photos/q1-finance.jpg') }}"
+              alt="Modern finance district skyline"
+              class="topic-photo topic-photo-side"
+            />
+            <div class="topic-photo-overlay">
+              <span class="topic-kicker">Research Question 1</span>
+              <strong class="topic-card-title">
+                How has the relationship between national wealth per capita and educational development changed over time?
+              </strong>
+              <span class="topic-card-copy">
+                Wealth, schooling, and tertiary participation are presented as linked outcomes rather than separate stories.
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <a class="topic-card card animate-on-scroll" href="#research-question-2">
+          <div class="topic-photo-pair">
+            <img
+              src="{{ url_for('static', filename='assets/photos/q2-study-group.jpg') }}"
+              alt="University students studying together around a table"
+              class="topic-photo topic-photo-main"
+            />
+            <img
+              src="{{ url_for('static', filename='assets/photos/q2-library.jpg') }}"
+              alt="Students reading in a library"
+              class="topic-photo topic-photo-side"
+            />
+            <div class="topic-photo-overlay">
+              <span class="topic-kicker">Research Question 2</span>
+              <strong class="topic-card-title">
+                Does wealth composition matter as much as wealth level?
+              </strong>
+              <span class="topic-card-copy">
+                Human, natural, and produced capital are framed as structural features of wealth rather than background context.
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <a class="topic-card card animate-on-scroll" href="#research-question-3">
+          <div class="topic-photo-pair">
+            <img
+              src="{{ url_for('static', filename='assets/photos/q3-graduates.jpg') }}"
+              alt="Graduates posing together after a ceremony"
+              class="topic-photo topic-photo-main"
+            />
+            <img
+              src="{{ url_for('static', filename='assets/photos/q3-graduation-throw.jpg') }}"
+              alt="Graduates throwing caps into the air"
+              class="topic-photo topic-photo-side"
+            />
+            <div class="topic-photo-overlay">
+              <span class="topic-kicker">Research Question 3</span>
+              <strong class="topic-card-title">
+                Which countries overperform or underperform educationally relative to their wealth level?
+              </strong>
+              <span class="topic-card-copy">
+                This section focuses on countries above and below the fitted wealth trend, not only on absolute averages.
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <a class="topic-card card animate-on-scroll" href="#research-question-4">
+          <div class="topic-photo-pair">
+            <img
+              src="{{ url_for('static', filename='assets/photos/q4-rural-classroom.jpg') }}"
+              alt="Students in a rural classroom"
+              class="topic-photo topic-photo-main"
+            />
+            <img
+              src="{{ url_for('static', filename='assets/photos/q4-community-support.jpg') }}"
+              alt="Children queueing for community support outside a school"
+              class="topic-photo topic-photo-side"
+            />
+            <div class="topic-photo-overlay">
+              <span class="topic-kicker">Research Question 4</span>
+              <strong class="topic-card-title">
+                Among countries with similar wealth levels, do spending and inequality still matter?
+              </strong>
+              <span class="topic-card-copy">
+                The final section frames education through investment, access, and inequality rather than wealth alone.
+              </span>
+            </div>
+          </div>
+        </a>
+      </section>
+
+      <section class="coverage-grid">
+        <article class="coverage-card card">
+          <span class="coverage-label">Country-Year Rows</span>
+          <strong id="coverageCoreRows">-</strong>
+        </article>
+        <article class="coverage-card card">
+          <span class="coverage-label">Countries</span>
+          <strong id="coverageCountries">-</strong>
+        </article>
+        <article class="coverage-card card">
+          <span class="coverage-label">Regions</span>
+          <strong id="coverageRegions">-</strong>
+        </article>
+        <article class="coverage-card card">
+          <span class="coverage-label">Income Groups</span>
+          <strong id="coverageIncomeGroups">-</strong>
+        </article>
+      </section>
+
+      <main class="section-stack">
+        <section id="research-question-1" class="research-section">
+          <div class="section-topline">
+            <div>
+              <p class="section-tag">Research Question 1</p>
+              <h2>Wealth vs Education</h2>
+              <p class="research-question">
+                Research question: How has the relationship between national wealth per capita and educational
+                development changed over time?
+              </p>
+              <p class="section-subtitle">
+                The main scatter view uses a single-year filter and shows one
+                country-year point at a time. The trend views underneath use the
+                summary tables so long-run movement can be read alongside the
+                year-specific country pattern.
+              </p>
+            </div>
+            <div id="q1Insight" class="insight-card card"></div>
+          </div>
+
+          <article class="chart-card chart-card-feature card">
+            <div class="chart-title chart-title-flex">
+              <div>
+                <h3 id="q1ScatterTitle">Wealth and school life expectancy</h3>
+                <p>Each point is one country-year. Bubble size reflects population. The play control animates the filtered scatter across years.</p>
+              </div>
+              <div class="button-tabs" id="q1ScatterMetricTabs">
+                <button class="is-active" data-metric="school" type="button">School Life Expectancy</button>
+                <button data-metric="tertiary" type="button">Tertiary Enrolment Rate</button>
+              </div>
+            </div>
+            <div class="chart-toolbar">
+              <div class="control-row compact-control-row">
+                <div class="control-block">
+                  <label for="q1YearFilter">Year</label>
+                  <select id="q1YearFilter"></select>
+                </div>
+                <div class="control-block">
+                  <label for="q1RegionFilter">Region</label>
+                  <select id="q1RegionFilter"></select>
+                </div>
+                <div class="control-block">
+                  <label for="q1IncomeFilter">Income Group</label>
+                  <select id="q1IncomeFilter"></select>
+                </div>
+              </div>
+              <div class="toolbar-actions">
+                <div class="playback-group">
+                  <button id="q1YearPlay" class="playback-button" type="button">Play</button>
+                  <button id="q1YearPause" class="playback-button is-secondary" type="button">Pause</button>
+                </div>
+                <button id="q1ResetFilters" type="button">Reset filters</button>
+              </div>
+            </div>
+            <div id="q1Legend" class="legend-row"></div>
+            <div id="q1ScatterMain" class="chart-stage"></div>
+            <div id="q1ScatterExplain" class="graph-explainer"></div>
+          </article>
+
+          <div class="chart-grid chart-grid-two">
+            <article class="chart-card card">
+              <div class="chart-title chart-title-flex">
+                <div>
+                  <h3 id="q1TrendTitle">Median school life expectancy over time</h3>
+                  <p>Global median trend across the full time span.</p>
+                </div>
+                <div class="button-tabs" id="q1TrendMetricTabs">
+                  <button class="is-active" data-metric="school" type="button">School Life Expectancy</button>
+                  <button data-metric="tertiary" type="button">Tertiary Enrolment Rate</button>
+                </div>
+              </div>
+              <div id="q1TrendMain" class="chart-stage"></div>
+              <div id="q1TrendExplain" class="graph-explainer"></div>
+            </article>
+
+            <article class="chart-card card">
+              <div class="chart-title chart-title-flex">
+                <div>
+                  <h3 id="q1RegionalTitle">Regional school life expectancy over time</h3>
+                  <p>One line per region across the full period.</p>
+                </div>
+                <div class="button-tabs" id="q1RegionalMetricTabs">
+                  <button class="is-active" data-metric="school" type="button">School Life Expectancy</button>
+                  <button data-metric="tertiary" type="button">Tertiary Enrolment Rate</button>
+                </div>
+              </div>
+              <div id="q1RegionalMain" class="chart-stage"></div>
+              <div id="q1RegionalExplain" class="graph-explainer"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="research-question-2" class="research-section">
+          <div class="section-topline">
+            <div>
+              <p class="section-tag">Research Question 2</p>
+              <h2>Wealth Composition Matters</h2>
+              <p class="research-question">
+                Research question: Does wealth composition matter as much as wealth level? Do countries with higher
+                human and produced capital shares achieve stronger educational outcomes than countries with greater
+                dependence on natural capital?
+              </p>
+              <p class="section-subtitle">
+                These three scatterplots test whether different components of
+                wealth are associated with different education outcomes.
+              </p>
+            </div>
+            <div id="q2Insight" class="insight-card card"></div>
+          </div>
+
+          <div class="control-strip card">
+            <div class="control-row">
+              <div class="control-block">
+                <label for="q2YearFilter">Year</label>
+                <select id="q2YearFilter"></select>
+              </div>
+              <div class="control-block">
+                <label for="q2RegionFilter">Region</label>
+                <select id="q2RegionFilter"></select>
+              </div>
+              <div class="control-block">
+                <label for="q2IncomeFilter">Income Group</label>
+                <select id="q2IncomeFilter"></select>
+              </div>
+              <div class="control-actions">
+                <button id="q2ResetFilters" type="button">Reset filters</button>
+              </div>
+            </div>
+            <div id="q2Legend" class="legend-row"></div>
+          </div>
+
+          <div class="chart-grid chart-grid-three">
+            <article class="chart-card card">
+              <div class="chart-title">
+                <h3>Human capital share and school life expectancy</h3>
+                <p>Each point is one country-year.</p>
+              </div>
+              <div id="q2HumanSchool" class="chart-stage"></div>
+              <div id="q2HumanSchoolExplain" class="graph-explainer"></div>
+            </article>
+
+            <article class="chart-card card">
+              <div class="chart-title">
+                <h3>Natural capital dependence and school life expectancy</h3>
+                <p>Each point is one country-year.</p>
+              </div>
+              <div id="q2NaturalSchool" class="chart-stage"></div>
+              <div id="q2NaturalSchoolExplain" class="graph-explainer"></div>
+            </article>
+
+            <article class="chart-card card">
+              <div class="chart-title">
+                <h3>Produced capital share and tertiary enrolment rate</h3>
+                <p>Each point is one country-year.</p>
+              </div>
+              <div id="q2ProducedTertiary" class="chart-stage"></div>
+              <div id="q2ProducedTertiaryExplain" class="graph-explainer"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="research-question-3" class="research-section">
+          <div class="section-topline">
+            <div>
+              <p class="section-tag">Research Question 3</p>
+              <h2>Overperformers and Underperformers</h2>
+              <p class="research-question">
+                Research question: Which countries overperform or underperform educationally relative to their wealth
+                level, and are those patterns regionally clustered?
+              </p>
+              <p class="section-subtitle">
+                This research question uses country averages only, so there is no year selector.
+                The scatter view and table help identify countries performing above
+                or below the wealth trend.
+              </p>
+            </div>
+            <div id="q3Insight" class="insight-card card"></div>
+          </div>
+
+          <div class="control-strip card">
+            <div class="control-row">
+              <div class="control-block">
+                <label for="q3RegionFilter">Region</label>
+                <select id="q3RegionFilter"></select>
+              </div>
+              <div class="control-block">
+                <label for="q3IncomeFilter">Income Group</label>
+                <select id="q3IncomeFilter"></select>
+              </div>
+              <div class="control-actions">
+                <button id="q3ResetFilters" type="button">Reset filters</button>
+              </div>
+            </div>
+            <div class="button-tabs" id="q3MetricTabs">
+              <button class="is-active" data-metric="school" type="button">School Life Expectancy</button>
+              <button data-metric="tertiary" type="button">Tertiary Enrolment Rate</button>
+            </div>
+            <div id="q3Legend" class="legend-row"></div>
+          </div>
+
+          <article class="chart-card card">
+            <div class="chart-title">
+              <h3 id="q3MetricTitle">Overperformers and underperformers in school life expectancy</h3>
+              <p>Each point is one country average.</p>
+            </div>
+            <div id="q3MetricScatter" class="chart-stage"></div>
+            <div id="q3MetricExplain" class="graph-explainer"></div>
+          </article>
+
+          <article class="chart-card card">
+            <div class="chart-title">
+              <h3>Supporting table of standout countries</h3>
+                <p>Sorted around the currently selected educational metric.</p>
+            </div>
+            <div id="q3TableIntro" class="table-brief"></div>
+            <div id="q3StandoutsTable" class="table-stage"></div>
+          </article>
+        </section>
+
+        <section id="research-question-4" class="research-section">
+          <div class="section-topline">
+            <div>
+              <p class="section-tag">Research Question 4</p>
+              <h2>Spending and Inequality</h2>
+              <p class="research-question">
+                Research question: Among countries with similar wealth levels, do higher education expenditure and lower
+                inequality correspond to stronger educational outcomes?
+              </p>
+              <p class="section-subtitle">
+                These are supporting charts only. They use smaller subsets, so the
+                conclusions should be treated more cautiously than the broader wealth and composition views.
+              </p>
+              <div class="policy-signal-strip">
+                <a class="policy-signal" href="https://www.unesco.org/gem-report/en/articles/unesco-calls-better-oversight-private-education-reduce-inequalities" target="_blank" rel="noreferrer">
+                  <strong>UNESCO GEM</strong>
+                  <span>One in three countries spend below the minimum public benchmark often cited for education systems.</span>
+                </a>
+                <a class="policy-signal" href="https://www.worldbank.org/en/news/feature/2023/04/24/the-false-dichotomy-between-more-more-effective-public-spending-on-education-lessons-from-country-experiences" target="_blank" rel="noreferrer">
+                  <strong>World Bank</strong>
+                  <span>Meeting a GDP benchmark does not always mean spending enough per learner where fiscal space is small.</span>
+                </a>
+                <a class="policy-signal" href="https://www.oecd.org/en/about/news/press-releases/2021/09/boost-education-investment-to-tackle-inequality-of-opportunity-says-oecd.html" target="_blank" rel="noreferrer">
+                  <strong>OECD</strong>
+                  <span>Investment matters most when resources are matched to need rather than spread evenly on paper.</span>
+                </a>
+              </div>
+            </div>
+            <div id="q4Insight" class="insight-card card"></div>
+          </div>
+
+          <div class="control-strip card">
+            <div class="control-row">
+              <div class="control-block">
+                <label for="q4YearFilter">Year</label>
+                <select id="q4YearFilter"></select>
+              </div>
+              <div class="control-block">
+                <label for="q4RegionFilter">Region</label>
+                <select id="q4RegionFilter"></select>
+              </div>
+              <div class="control-block">
+                <label for="q4IncomeFilter">Income Group</label>
+                <select id="q4IncomeFilter"></select>
+              </div>
+              <div class="control-actions">
+                <button id="q4ResetFilters" type="button">Reset filters</button>
+              </div>
+            </div>
+            <div id="q4Legend" class="legend-row"></div>
+          </div>
+
+          <div class="chart-grid chart-grid-two">
+            <article class="chart-card card">
+              <div class="chart-title chart-title-flex">
+                <div>
+                  <h3 id="q4SpendTitle">Education spending and school life expectancy</h3>
+                  <p>Each point is one matched country-year observation.</p>
+                </div>
+                <div class="button-tabs" id="q4SpendMetricTabs">
+                  <button class="is-active" data-metric="school" type="button">School Life Expectancy</button>
+                  <button data-metric="tertiary" type="button">Tertiary Enrolment Rate</button>
+                </div>
+              </div>
+              <div id="q4SpendMain" class="chart-stage"></div>
+              <div id="q4SpendExplain" class="graph-explainer"></div>
+            </article>
+
+            <article class="chart-card card">
+              <div class="chart-title chart-title-flex">
+                <div>
+                  <h3 id="q4GiniTitle">Inequality and school life expectancy</h3>
+                  <p>Each point is one matched country-year observation.</p>
+                </div>
+                <div class="button-tabs" id="q4GiniMetricTabs">
+                  <button class="is-active" data-metric="school" type="button">School Life Expectancy</button>
+                  <button data-metric="tertiary" type="button">Tertiary Enrolment Rate</button>
+                </div>
+              </div>
+              <div id="q4GiniMain" class="chart-stage"></div>
+              <div id="q4GiniExplain" class="graph-explainer"></div>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <section class="closing-panel card animate-on-scroll">
+        <div class="closing-panel-head">
+          <p class="section-tag">Reading The Full Picture</p>
+          <h2>What the evidence points toward</h2>
+        </div>
+        <p class="closing-copy">
+          Across the full dataset, wealth per capita remains strongly associated with educational development, but
+          level alone does not tell the whole story. The visuals suggest that human and produced capital align more
+          closely with stronger outcomes than natural-capital dependence, several countries perform meaningfully above
+          or below their fitted wealth benchmark, and inequality remains the clearer policy signal once wealth is taken
+          into account. Taken together, the evidence points toward long-horizon human-capital investment, stronger
+          conversion of national wealth into educational capacity, and closer attention to equitable access rather than
+          spending volume alone.
+        </p>
+        <div class="closing-highlights">
+          <span>Human-capital investment</span>
+          <span>Wealth-to-education conversion</span>
+          <span>Equitable access and lower inequality</span>
+        </div>
+      </section>
+    </div>
+
+    <div id="reportOverlay" class="report-overlay" hidden>
+      <div id="reportBackdrop" class="report-overlay-backdrop"></div>
+      <section class="report-dialog" role="dialog" aria-modal="true" aria-labelledby="reportDialogTitle">
+        <div class="report-dialog-head">
+          <div>
+            <span class="report-dialog-kicker">Coursework report</span>
+            <h3 id="reportDialogTitle">Samrat_Ganguly_K25131454_DataVizFINALREPORT.pdf</h3>
+          </div>
+          <button id="reportClose" class="report-close" type="button" aria-label="Close report overlay"></button>
+        </div>
+        <iframe
+          id="reportFrame"
+          class="report-frame"
+          data-src="{{ url_for('report_file') }}"
+          title="Final coursework report PDF"
+          loading="lazy"
+        ></iframe>
+      </section>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+    <aside id="paletteWidget" class="palette-widget is-minimized">
+      <button
+        id="paletteWidgetToggle"
+        class="palette-widget-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-label="Open accessibility and palette panel"
+      >
+        <span class="palette-toggle-drops" aria-hidden="true">
+          <span class="drop drop-a"></span>
+          <span class="drop drop-b"></span>
+          <span class="drop drop-c"></span>
+        </span>
+        <span class="palette-toggle-text">Accessibility &amp; Palette</span>
+      </button>
+      <div id="paletteWidgetBody" class="palette-widget-body">
+        <div class="palette-widget-head">
+          <div>
+            <span class="palette-widget-kicker">Accessible by design</span>
+            <h3>Color Vision & Palette</h3>
+          </div>
+          <button
+            id="paletteWidgetClose"
+            class="palette-widget-close"
+            type="button"
+            aria-label="Minimize accessibility and palette panel"
+          ></button>
+        </div>
+        <div class="palette-widget-section">
+          <h3>Designed For</h3>
+          <p><strong>Protanopia</strong> and <strong>deuteranopia</strong>, the two most common red-green color vision deficiencies.</p>
+        </div>
+        <div class="palette-widget-section">
+          <h3>Why This Palette</h3>
+          <p>
+            Region colors stay fixed for comparison across pages. For trend and relationship cues, blue or teal indicate
+            upward or positive patterns, vermillion indicates downward or negative patterns, and neutral grey is used
+            when the signal is weak or unclear.
+          </p>
+        </div>
+        <div id="paletteSwatches" class="palette-swatches"></div>
+      </div>
+    </aside>
+  </body>
+</html>
+
